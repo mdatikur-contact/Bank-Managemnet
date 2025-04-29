@@ -98,7 +98,86 @@ void checkBalance()
     }
 }
 
+// Function to deposit money
+void deposit()
+{
+    char phone[15], password[20];
+    float amount;
+    struct Account acc;
+    int found = 0;
 
+    printf("Enter Phone Number: ");
+    scanf("%s", phone);
+    printf("Enter Password: ");
+    scanf("%s", password);
+
+    FILE *fp = fopen("accounts.txt", "r+");
+    while (fread(&acc, sizeof(struct Account), 1, fp))
+    {
+        if (strcmp(acc.phone, phone) == 0 && strcmp(acc.password, password) == 0)
+        {
+            printf("Enter Amount to Deposit: $");
+            scanf("%f", &amount);
+            acc.balance += amount;
+
+            fseek(fp, -(long)sizeof(struct Account), SEEK_CUR);
+            fwrite(&acc, sizeof(struct Account), 1, fp);
+            found = 1;
+            printf("Deposit Successful!\n");
+            break;
+        }
+    }
+    fclose(fp);
+
+    if (!found)
+    {
+        printf("Account not found or incorrect password.\n");
+    }
+}
+
+// Function to withdraw money
+void withdraw()
+{
+    char phone[15], password[20];
+    float amount;
+    struct Account acc;
+    int found = 0;
+
+    printf("Enter Phone Number: ");
+    scanf("%s", phone);
+    printf("Enter Password: ");
+    scanf("%s", password);
+
+    FILE *fp = fopen("accounts.txt", "r+");
+    while (fread(&acc, sizeof(struct Account), 1, fp))
+    {
+        if (strcmp(acc.phone, phone) == 0 && strcmp(acc.password, password) == 0)
+        {
+            printf("Enter Amount to Withdraw: $");
+            scanf("%f", &amount);
+
+            if (amount > acc.balance)
+            {
+                printf("Insufficient Balance!\n");
+            }
+            else
+            {
+                acc.balance -= amount;
+                fseek(fp, -(long)sizeof(struct Account), SEEK_CUR);
+                fwrite(&acc, sizeof(struct Account), 1, fp);
+                printf("Withdrawal Successful!\n");
+            }
+            found = 1;
+            break;
+        }
+    }
+    fclose(fp);
+
+    if (!found)
+    {
+        printf("Account not found or incorrect password.\n");
+    }
+}
 // Main Menu
 int main()
 {
