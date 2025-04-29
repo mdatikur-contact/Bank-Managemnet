@@ -7,16 +7,17 @@ struct Account
 {
     char name[50];
     char dob[15];
-    char phone[15];
+    int phone;
     char password[20];
     float balance;
 };
 
 // Function to create a new account
+// Function to create a new account
 void createAccount()
 {
     struct Account acc;
-    FILE *fp = fopen("accounts.txt", "a+");  // Open the file in append and read mode
+    FILE *fp = fopen("accounts.txt", "a+"); // Open the file in append and read mode
     if (!fp)
     {
         printf("Error opening file!\n");
@@ -24,16 +25,16 @@ void createAccount()
     }
 
     // Check if the phone number already exists
-    char phone[15];
+    int phone;
     int exists = 0;
     printf("Enter Phone Number (as Account Number): ");
-    scanf("%s", phone);
+    scanf("%d", &phone);
 
     // Check for duplicate phone number
     struct Account tempAcc;
     while (fread(&tempAcc, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(tempAcc.phone, phone) == 0)
+        if (tempAcc.phone == phone)
         {
             exists = 1;
             break;
@@ -42,25 +43,38 @@ void createAccount()
 
     if (exists)
     {
-        printf("Error: This phone number already has an account.\n");
+        printf("\n **Error: This phone number already has an account.**\n");
         fclose(fp);
         return;
     }
 
     // If no duplicate, proceed to create the account
     acc.balance = 0.0;
-    strcpy(acc.phone, phone);  // Use the phone number entered
+    acc.phone = phone; // Use the phone number entered
 
-    getchar();  // Clear newline from buffer
+    getchar(); // Clear newline from buffer
     printf("Enter Full Name: ");
     fgets(acc.name, sizeof(acc.name), stdin);
-    acc.name[strcspn(acc.name, "\n")] = 0;  // Remove newline character
+    acc.name[strcspn(acc.name, "\n")] = 0; // Remove newline character
 
     printf("Enter Date of Birth (DD-MM-YYYY): ");
     scanf("%s", acc.dob);
 
-    printf("Set Password: ");
-    scanf("%s", acc.password);
+    // Password validation
+    while (1)
+    {
+        printf("Set Password (4 to 8 characters): ");
+        scanf("%s", acc.password);
+        int len = strlen(acc.password);
+        if (len >= 4 && len <= 8)
+        {
+            break;
+        }
+        else
+        {
+            printf("\n**Error: Password must be between 4 and 8 characters.**\n");
+        }
+    }
 
     fwrite(&acc, sizeof(struct Account), 1, fp);
     fclose(fp);
@@ -71,20 +85,22 @@ void createAccount()
 // Function to check balance
 void checkBalance()
 {
-    char phone[15], password[20];
+    int phone;
+    char password[20];
     struct Account acc;
     int found = 0;
 
     printf("Enter Phone Number: ");
-    scanf("%s", phone);
+    scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
 
     FILE *fp = fopen("accounts.txt", "r");
     while (fread(&acc, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(acc.phone, phone) == 0 && strcmp(acc.password, password) == 0)
+        if (acc.phone == phone && strcmp(acc.password, password) == 0)
         {
+            printf("\n=== Balance Status ===\n");
             printf("Current Balance: $%.2f\n", acc.balance);
             found = 1;
             break;
@@ -94,27 +110,28 @@ void checkBalance()
 
     if (!found)
     {
-        printf("Account not found or incorrect password.\n");
+        printf("\n **Account not found or incorrect password.**\n");
     }
 }
 
 // Function to deposit money
 void deposit()
 {
-    char phone[15], password[20];
+    int phone;
+    char password[20];
     float amount;
     struct Account acc;
     int found = 0;
 
     printf("Enter Phone Number: ");
-    scanf("%s", phone);
+    scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
 
     FILE *fp = fopen("accounts.txt", "r+");
     while (fread(&acc, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(acc.phone, phone) == 0 && strcmp(acc.password, password) == 0)
+        if (acc.phone == phone && strcmp(acc.password, password) == 0)
         {
             printf("Enter Amount to Deposit: $");
             scanf("%f", &amount);
@@ -123,7 +140,8 @@ void deposit()
             fseek(fp, -(long)sizeof(struct Account), SEEK_CUR);
             fwrite(&acc, sizeof(struct Account), 1, fp);
             found = 1;
-            printf("Deposit Successful!\n");
+
+            printf("\n == Deposit Successful! ==\n");
             break;
         }
     }
@@ -131,41 +149,42 @@ void deposit()
 
     if (!found)
     {
-        printf("Account not found or incorrect password.\n");
+        printf("\n **Account not found or incorrect password.**\n");
     }
 }
 
 // Function to withdraw money
 void withdraw()
 {
-    char phone[15], password[20];
+    int phone;
+    char password[20];
     float amount;
     struct Account acc;
     int found = 0;
 
     printf("Enter Phone Number: ");
-    scanf("%s", phone);
+    scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
 
     FILE *fp = fopen("accounts.txt", "r+");
     while (fread(&acc, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(acc.phone, phone) == 0 && strcmp(acc.password, password) == 0)
+        if (acc.phone == phone && strcmp(acc.password, password) == 0)
         {
             printf("Enter Amount to Withdraw: $");
             scanf("%f", &amount);
 
             if (amount > acc.balance)
             {
-                printf("Insufficient Balance!\n");
+                printf("\n **Insufficient Balance!**\n");
             }
             else
             {
                 acc.balance -= amount;
                 fseek(fp, -(long)sizeof(struct Account), SEEK_CUR);
                 fwrite(&acc, sizeof(struct Account), 1, fp);
-                printf("Withdrawal Successful!\n");
+                printf("\n ==Withdrawal Successful!==\n");
             }
             found = 1;
             break;
@@ -175,38 +194,40 @@ void withdraw()
 
     if (!found)
     {
-        printf("Account not found or incorrect password.\n");
+        printf("\n**Account not found or incorrect password.**\n");
     }
 }
+
 // Function to transfer balance
 void transferBalance()
 {
-    char senderPhone[15], senderPassword[20], receiverPhone[15];
+    int senderPhone, receiverPhone;
+    char senderPassword[20];
     float amount;
     struct Account sender, receiver;
     int senderFound = 0, receiverFound = 0;
 
     printf("Enter Your Phone Number: ");
-    scanf("%s", senderPhone);
+    scanf("%d", &senderPhone);
     printf("Enter Your Password: ");
     scanf("%s", senderPassword);
 
     printf("Enter Receiver's Phone Number: ");
-    scanf("%s", receiverPhone);
+    scanf("%d", &receiverPhone);
 
     FILE *fp = fopen("accounts.txt", "r+");
 
     // Check if sender account exists and has sufficient balance
     while (fread(&sender, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(sender.phone, senderPhone) == 0 && strcmp(sender.password, senderPassword) == 0)
+        if (sender.phone == senderPhone && strcmp(sender.password, senderPassword) == 0)
         {
             printf("Enter Amount to Transfer: $");
             scanf("%f", &amount);
 
             if (amount > sender.balance)
             {
-                printf("Insufficient Balance!\n");
+                printf("\n**Insufficient Balance!**\n");
                 fclose(fp);
                 return;
             }
@@ -224,7 +245,7 @@ void transferBalance()
     // Check if receiver account exists
     while (fread(&receiver, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(receiver.phone, receiverPhone) == 0)
+        if (receiver.phone == receiverPhone)
         {
             receiver.balance += amount;
             receiverFound = 1;
@@ -237,34 +258,35 @@ void transferBalance()
 
     if (senderFound && receiverFound)
     {
-        printf("Transfer Successful!\n");
+        printf("\n==Transfer Successful!==\n");
     }
     else
     {
-        printf("Transfer Failed! Check account details.\n");
+        printf("\n **Transfer Failed! Check account details.**\n");
     }
 }
 
 // Function to view account status
 void accountStatus()
 {
-    char phone[15], password[20];
+    int phone;
+    char password[20];
     struct Account acc;
     int found = 0;
 
     printf("Enter Phone Number: ");
-    scanf("%s", phone);
+    scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
 
     FILE *fp = fopen("accounts.txt", "r");
     while (fread(&acc, sizeof(struct Account), 1, fp))
     {
-        if (strcmp(acc.phone, phone) == 0 && strcmp(acc.password, password) == 0)
+        if (acc.phone == phone && strcmp(acc.password, password) == 0)
         {
             printf("\n=== Account Status ===\n");
             printf("Name: %s\n", acc.name);
-            printf("Account Number: %s\n", acc.phone);
+            printf("Account Number: %d\n", acc.phone);
             printf("Current Balance: $%.2f\n", acc.balance);
             found = 1;
             break;
@@ -274,9 +296,10 @@ void accountStatus()
 
     if (!found)
     {
-        printf("Account not found or incorrect password.\n");
+        printf("\n**Account not found or incorrect password.**\n");
     }
 }
+
 // Main Menu
 int main()
 {
