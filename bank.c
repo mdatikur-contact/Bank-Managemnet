@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
 
 // Structure to store account information
 struct Account
@@ -24,13 +26,13 @@ void createAccount()
         return;
     }
 
-    // Check if the phone number already exists
+    // Check if the Account Number already exists
     int phone;
     int exists = 0;
     printf("Enter Phone Number (as Account Number): ");
     scanf("%d", &phone);
 
-    // Check for duplicate phone number
+    // Check for duplicate Account Number
     struct Account tempAcc;
     while (fread(&tempAcc, sizeof(struct Account), 1, fp))
     {
@@ -43,14 +45,14 @@ void createAccount()
 
     if (exists)
     {
-        printf("\n **Error: This phone number already has an account.**\n");
+        printf("\n **Error: This Account Number already has an account.**\n");
         fclose(fp);
         return;
     }
 
     // If no duplicate, proceed to create the account
     acc.balance = 0.0;
-    acc.phone = phone; // Use the phone number entered
+    acc.phone = phone; // Use the Account Number entered
 
     getchar(); // Clear newline from buffer
     printf("Enter Full Name: ");
@@ -90,7 +92,7 @@ void checkBalance()
     struct Account acc;
     int found = 0;
 
-    printf("Enter Phone Number: ");
+    printf("Enter Account Number: ");
     scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
@@ -123,7 +125,7 @@ void deposit()
     struct Account acc;
     int found = 0;
 
-    printf("Enter Phone Number: ");
+    printf("Enter Account Number: ");
     scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
@@ -162,7 +164,7 @@ void withdraw()
     struct Account acc;
     int found = 0;
 
-    printf("Enter Phone Number: ");
+    printf("Enter Account Number: ");
     scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
@@ -207,12 +209,12 @@ void transferBalance()
     struct Account sender, receiver;
     int senderFound = 0, receiverFound = 0;
 
-    printf("Enter Your Phone Number: ");
+    printf("Enter Your Account Number: ");
     scanf("%d", &senderPhone);
     printf("Enter Your Password: ");
     scanf("%s", senderPassword);
 
-    printf("Enter Receiver's Phone Number: ");
+    printf("Enter Receiver's Account Number: ");
     scanf("%d", &receiverPhone);
 
     FILE *fp = fopen("accounts.txt", "r+");
@@ -274,7 +276,7 @@ void accountStatus()
     struct Account acc;
     int found = 0;
 
-    printf("Enter Phone Number: ");
+    printf("Enter Account Number: ");
     scanf("%d", &phone);
     printf("Enter Password: ");
     scanf("%s", password);
@@ -286,7 +288,7 @@ void accountStatus()
         {
             printf("\n=== Account Status ===\n");
             printf("Name: %s\n", acc.name);
-            printf("Account Number: %d\n", acc.phone);
+            printf("Account Number: 0%d\n", acc.phone);
             printf("Current Balance: $%.2f\n", acc.balance);
             found = 1;
             break;
@@ -298,6 +300,52 @@ void accountStatus()
     {
         printf("\n**Account not found or incorrect password.**\n");
     }
+}
+
+
+void showAllAccounts()
+{
+    struct Account acc;
+    char seenPhones[1000][15];  // Array to store up to 1000 unique Account Numbers
+    int seenCount = 0;
+    bool duplicate;
+
+    FILE *fp = fopen("accounts.txt", "r");
+    if (!fp)
+    {
+        printf("\n **Error opening file or no accounts found.**\n");
+        return;
+    }
+
+    printf("\n=== All Accounts Summary ===\n");
+    printf("%-20s | %-15s\n", "Name", "Account Number");
+    printf("-----------------------------------\n");
+
+    while (fread(&acc, sizeof(struct Account), 1, fp))
+    {
+        duplicate = false;
+        char phoneStr[15];
+        sprintf(phoneStr, "%d", acc.phone); // Convert phone to string
+
+        for (int i = 0; i < seenCount; i++)
+        {
+            if (strcmp(seenPhones[i], phoneStr) == 0)
+            {
+                duplicate = true;
+                break;
+            }
+        }
+
+        if (!duplicate)
+        {
+            printf("%-20s | 0%d\n", acc.name, acc.phone);
+
+            strcpy(seenPhones[seenCount], phoneStr);
+            seenCount++;
+        }
+    }
+
+    fclose(fp);
 }
 
 // Main Menu
@@ -313,6 +361,7 @@ int main()
         printf("4. Withdraw Money\n");
         printf("5. Transfer Balance\n");
         printf("6. Account Status\n");
+        printf("7. Show All Accounts\n");
         printf("0. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
@@ -336,6 +385,9 @@ int main()
             break;
         case 6:
             accountStatus();
+            break;
+        case 7:
+            showAllAccounts();
             break;
         case 0:
             printf("Exiting...\n");
